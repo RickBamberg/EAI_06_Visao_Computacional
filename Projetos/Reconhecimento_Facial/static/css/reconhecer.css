@@ -1,0 +1,23 @@
+/* Estilos para centralizar e organizar os elementos na página */
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    font-family: sans-serif;
+    background-color: #f0f0f0;
+}
+#container {
+    position: relative;
+    margin-top: 20px;
+}
+#videoElement {
+    border: 3px solid #333;
+    border-radius: 10px;
+}
+#canvas {
+    /* O canvas ficará sobreposto exatamente em cima do vídeo */
+    position: absolute;
+    top: 0;
+    left: 0;
+}

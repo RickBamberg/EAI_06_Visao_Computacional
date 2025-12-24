@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <title>Capturar Fotos - Sistema de Reconhecimento Facial</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/capturar.css') }}">
+</head>
+
+<body>
+    <header>
+        <div class="header-title">
+             <p>Sistema de Reconhecimento Facial</p>
+        </div>
+    </header>
+
+    <nav>
+        <div class="nav-container">
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('index') }}" class="nav-btn">Início</a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('capturar') }}" class="nav-btn active">Capturar</a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('preview') }}" class="nav-btn">Preview</a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('tratar') }}" class="nav-btn">Tratar</a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('reconhecer') }}" class="nav-btn">Reconhecer</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <main>
+        <div class="capture-container">
+            <!-- Painel de Configuração (Esquerda) -->
+            <div class="config-panel">
+                <div class="card" style="background-color: #2c3e50; border: 1px solid #4a6491; margin-bottom: 20px;">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="nomePessoa" class="form-label">Nome da Pessoa:</label>
+                            <input type="text" class="form-control" id="nomePessoa" value=" " placeholder="Digite o nome">
+                        </div>
+                        <div class="mb-3">
+                            <label for="numFotos" class="form-label">Número de Fotos:</label>
+                            <input type="number" class="form-control" id="numFotos" value="5" min="1" max="20">
+                        </div>
+                        <div class="progress-container" id="progressContainer">
+                            <div class="progress-bar" id="progressBar"></div>
+                        </div>
+                        <div class="controls">
+                            <button id="btnIniciar" class="btn btn-capture w-100 mb-2">Iniciar Captura</button>
+                            <button id="btnParar" class="btn btn-stop w-100" style="display: none;">Parar Captura</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Painel do Vídeo (Direita) -->
+            <div class="video-panel">
+                <div class="video-container-wrapper">
+                    <!-- Container do vídeo -->
+                    <div class="video-container" id="videoContainer" style="display: none;">
+                        <img id="videoFeed" src="" alt="Feed da câmera">
+                    </div>
+
+                    <!-- Controles de captura ao lado do vídeo -->
+                    <div class="capture-controls" id="captureControls" style="display: none;">
+                        <button id="btnCapturarFoto" class="btn btn-capture" disabled>
+                            📸 Capturar Foto
+                        </button>
+                        <div class="camera-status">
+                            <p>Pressione 'S' para capturar</p>
+                            <p id="fotosCapturadas">0/5 fotos capturadas</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mensagem quando câmera não está ativa -->
+                <div id="cameraPlaceholder" class="text-center" style="padding: 100px 20px; background-color: #2c3e50; border: 2px dashed #4a6491; border-radius: 10px;">
+                    <h4>📹 Câmera Inativa</h4>
+                    <p>Clique em "Iniciar Captura" para ativar a câmera</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-lbl">
+            <p>Mensagem: <span id="footerMessage">Sistema pronto para captura</span></p>
+        </div>
+    </footer>
+
+    <script>
+        let capturaAtiva = false;
+        let statusInterval;
+        let videoFeed = document.getElementById('videoFeed');
+
+        // Adiciona um parâmetro aleatório à URL do vídeo para evitar cache
+        function atualizarVideoFeed() {
+            if (capturaAtiva) {
+                const timestamp = new Date().getTime();
+                videoFeed.src = `/video_feed?t=${timestamp}`;
+            }
+        }
+
+        function atualizarStatus(message, tipo = 'info') {
+            document.getElementById('footerMessage').textContent = message;
+        }
+
+        function atualizarProgresso(fotosCapturadas, totalFotos) {
+            const progressBar = document.getElementById('progressBar');
+            const progressContainer = document.getElementById('progressContainer');
+            const percentual = (fotosCapturadas / totalFotos) * 100;
+            
+            progressBar.style.width = `${percentual}%`;
+            progressContainer.style.display = 'block';
+            document.getElementById('fotosCapturadas').textContent = `${fotosCapturadas}/${totalFotos} fotos capturadas`;
+        }
+
+        function atualizarStatusCaptura() {
+            if (!capturaAtiva) return;
+            
+            fetch('/status_captura')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.capturando) {
+                        atualizarStatus(`Capturando para ${data.nome_pessoa} - ${data.fotos_capturadas}/${data.num_fotos} fotos`, 'info');
+                        atualizarProgresso(data.fotos_capturadas, data.num_fotos);
+                        document.getElementById('btnCapturarFoto').disabled = false;
+                        
+                        // Atualiza o feed de vídeo periodicamente para evitar congelamento
+                        if (data.fotos_capturadas % 2 === 0) {
+                            atualizarVideoFeed();
+                        }
+                    } else {
+                        // Captura finalizada
+                        if (data.fotos_capturadas > 0) {
+                            atualizarStatus(`Captura finalizada! ${data.fotos_capturadas} fotos salvas para ${data.nome_pessoa}`, 'success');
+                        }
+                        pararCaptura();
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao verificar status:', error);
+                });
+        }
+
+        function iniciarCaptura() {
+            const nomePessoa = document.getElementById('nomePessoa').value.trim();
+            const numFotos = document.getElementById('numFotos').value;
+
+            if (!nomePessoa) {
+                atualizarStatus('Por favor, digite o nome da pessoa', 'error');
+                return;
+            }
+
+            // Força a liberação de recursos anteriores
+            if (capturaAtiva) {
+                pararCaptura();
+                setTimeout(iniciarCaptura, 500);
+                return;
+            }
+
+            fetch('/iniciar_captura', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    nome_pessoa: nomePessoa,
+                    num_fotos: numFotos
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    capturaAtiva = true;
+                    document.getElementById('videoContainer').style.display = 'block';
+                    document.getElementById('captureControls').style.display = 'flex';
+                    document.getElementById('cameraPlaceholder').style.display = 'none';
+                    
+                    // Adiciona timestamp para evitar cache
+                    const timestamp = new Date().getTime();
+                    videoFeed.src = `/video_feed?t=${timestamp}`;
+                    
+                    document.getElementById('btnIniciar').style.display = 'none';
+                    document.getElementById('btnParar').style.display = 'inline-block';
+                    
+                    atualizarStatus('Câmera ativada! Posicione-se e clique em "Capturar Foto"', 'success');
+                    atualizarProgresso(0, numFotos);
+                    
+                    // Inicia verificação periódica do status
+                    statusInterval = setInterval(atualizarStatusCaptura, 1000);
+                } else {
+                    atualizarStatus(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                atualizarStatus('Erro ao iniciar captura', 'error');
+                console.error('Erro:', error);
+            });
+        }
+
+        function pararCaptura() {
+            if (!capturaAtiva) return;
+
+            fetch('/parar_captura', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                capturaAtiva = false;
+                clearInterval(statusInterval);
+                
+                document.getElementById('videoContainer').style.display = 'none';
+                document.getElementById('captureControls').style.display = 'none';
+                document.getElementById('cameraPlaceholder').style.display = 'block';
+                document.getElementById('btnIniciar').style.display = 'inline-block';
+                document.getElementById('btnParar').style.display = 'none';
+                document.getElementById('progressContainer').style.display = 'none';
+                
+                // Limpa o src do vídeo para liberar a câmera
+                videoFeed.src = '';
+                
+                atualizarStatus('Captura parada. Pronto para uma nova sessão.', 'info');
+            })
+            .catch(error => {
+                console.error('Erro ao parar captura:', error);
+            });
+        }
+
+        function capturarFoto() {
+            if (!capturaAtiva) return;
+            
+            // Desabilita o botão temporariamente
+            const btnCapturar = document.getElementById('btnCapturarFoto');
+            btnCapturar.disabled = true;
+            btnCapturar.textContent = '📸 Capturando...';
+
+            fetch('/capturar_foto', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    atualizarStatus(data.message, 'success');
+                    // Re-habilita o botão após um breve delay
+                    setTimeout(() => {
+                        btnCapturar.disabled = false;
+                        btnCapturar.textContent = '📸 Capturar Foto';
+                    }, 1000);
+                } else if (data.status === 'complete') {
+                    atualizarStatus(data.message, 'success');
+                    // Pequeno delay antes de parar para garantir que tudo foi processado
+                    setTimeout(pararCaptura, 500);
+                } else {
+                    atualizarStatus(data.message, 'error');
+                    btnCapturar.disabled = false;
+                    btnCapturar.textContent = '📸 Capturar Foto';
+                }
+            })
+            .catch(error => {
+                atualizarStatus('Erro ao capturar foto', 'error');
+                btnCapturar.disabled = false;
+                btnCapturar.textContent = '📸 Capturar Foto';
+                console.error('Erro:', error);
+            });
+        }
+
+        // Event listeners
+        document.getElementById('btnIniciar').addEventListener('click', iniciarCaptura);
+        document.getElementById('btnParar').addEventListener('click', pararCaptura);
+        document.getElementById('btnCapturarFoto').addEventListener('click', capturarFoto);
+
+        // Teclas de atalho
+        document.addEventListener('keydown', function(event) {
+            if (capturaAtiva) {
+                if (event.key === 's' || event.key === 'S') {
+                    event.preventDefault();
+                    capturarFoto();
+                } else if (event.key === 'q' || event.key === 'Q') {
+                    event.preventDefault();
+                    pararCaptura();
+                }
+            }
+        });
+
+        // Limpa recursos quando a página é fechada
+        window.addEventListener('beforeunload', function() {
+            if (capturaAtiva) {
+                // Usa fetch com keepalive para garantir que a requisição seja processada
+                fetch('/parar_captura', { 
+                    method: 'POST',
+                    keepalive: true 
+                });
+            }
+        });
+
+        // Limpa o estado ao carregar a página
+        window.addEventListener('load', function() {
+            if (capturaAtiva) {
+                pararCaptura();
+            }
+        });
+    </script>
+</body>
+</html>

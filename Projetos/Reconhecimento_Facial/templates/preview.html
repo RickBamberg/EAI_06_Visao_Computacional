@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <title>Preview de Fotos - Sistema de Reconhecimento Facial</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/preview.css') }}">
+
+</head>
+
+<body>
+    <header>
+        <div class="header-title">
+             <p>Sistema de Reconhecimento Facial</p>
+        </div>
+    </header>
+
+    <nav>
+        <div class="nav-container">
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('index') }}" class="nav-btn">Início</a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('capturar') }}" class="nav-btn">Capturar</a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('preview') }}" class="nav-btn active">Preview</a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('tratar') }}" class="nav-btn">Tratar</a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('reconhecer') }}" class="nav-btn">Reconhecer</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <main>
+        <div class="preview-container">
+            <div class="search-panel">
+                <h3>Visualizar Fotos</h3>
+                
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="mb-3">
+                            <label for="nomePessoa" class="form-label">Nome da Pessoa:</label>
+                            <input type="text" class="form-control" id="nomePessoa" placeholder="Digite o nome completo">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="btnBuscar" class="form-label">&nbsp;</label>
+                            <button id="btnBuscar" class="btn btn-preview w-100">Buscar Fotos</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="results-panel" id="resultsPanel">
+                <div class="loading" id="loadingIndicator">
+                    <div class="loading-spinner"></div>
+                    <p>Buscando fotos...</p>
+                </div>
+
+                <div class="error-message" id="errorMessage">
+                    <p>Erro ao buscar fotos. Verifique se o nome está correto e se existem fotos para esta pessoa.</p>
+                </div>
+                
+                <div class="person-info" id="personInfo" style="display: none;">
+                    <h4 class="person-name" id="personName"></h4>
+                    <p class="photos-count" id="photosCount"></p>
+                </div>
+                
+                <div class="photos-grid" id="photosGrid">
+                    <!-- As fotos serão inseridas aqui via JavaScript -->
+                </div>
+                
+                <div class="no-photos" id="noPhotos" style="display: none;">
+                    <p>Nenhuma foto encontrada para esta pessoa.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal para visualização ampliada -->
+    <div class="modal fade" id="photoModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">Visualização de Foto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="modalImage" src="" alt="Foto ampliada" class="img-fluid">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-preview" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-lbl">
+            <p>Mensagem: <span id="footerMessage">Pronto para visualizar fotos</span></p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const nomePessoaInput = document.getElementById('nomePessoa');
+            const btnBuscar = document.getElementById('btnBuscar');
+            const resultsPanel = document.getElementById('resultsPanel');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const errorMessage = document.getElementById('errorMessage');
+            const personInfo = document.getElementById('personInfo');
+            const personName = document.getElementById('personName');
+            const photosCount = document.getElementById('photosCount');
+            const photosGrid = document.getElementById('photosGrid');
+            const noPhotos = document.getElementById('noPhotos');
+            const footerMessage = document.getElementById('footerMessage');
+            const photoModal = new bootstrap.Modal(document.getElementById('photoModal'));
+            
+            // Função para buscar as fotos
+            function buscarFotos() {
+                const nomePessoa = nomePessoaInput.value.trim();
+                
+                if (!nomePessoa) {
+                    footerMessage.textContent = 'Por favor, digite o nome da pessoa';
+                    return;
+                }
+                
+                // Mostrar painel de resultados e indicador de carregamento
+                resultsPanel.style.display = 'block';
+                loadingIndicator.style.display = 'block';
+                errorMessage.style.display = 'none';
+                personInfo.style.display = 'none';
+                photosGrid.innerHTML = '';
+                noPhotos.style.display = 'none';
+                
+                footerMessage.textContent = `Buscando fotos de ${nomePessoa}...`;
+                
+                // Fazer requisição para a API
+                fetch(`/buscar_fotos?nome=${encodeURIComponent(nomePessoa)}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Erro na resposta da rede');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Resposta da API:', data); // Para debug
+                        
+                        // Esconder indicador de carregamento
+                        loadingIndicator.style.display = 'none';
+                        
+                        if (data.status === 'success') {
+                            if (data.fotos && data.fotos.length > 0) {
+                                // Mostrar informações da pessoa
+                                personName.textContent = data.nome_pessoa;
+                                photosCount.textContent = `${data.quantidade} ${data.quantidade === 1 ? 'foto encontrada' : 'fotos encontradas'}`;
+                                personInfo.style.display = 'block';
+                                
+                                // Adicionar fotos ao grid
+                                data.fotos.forEach(foto => {
+                                    const photoItem = document.createElement('div');
+                                    photoItem.className = 'photo-item';
+                                    photoItem.innerHTML = `
+                                        <img src="${foto.url}" alt="${foto.nome}" class="photo-img" onerror="this.src='https://placehold.co/300x400/2c3e50/ecf0f1?text=Erro+ao+carregar'">
+                                        <div class="photo-info">${foto.nome}<br>${foto.data}</div>
+                                    `;
+                                    
+                                    // Adicionar evento de clique para ampliar a foto
+                                    photoItem.addEventListener('click', () => {
+                                        document.getElementById('modalImage').src = foto.url;
+                                        document.getElementById('modalTitle').textContent = `Foto de ${data.nome_pessoa}`;
+                                        photoModal.show();
+                                    });
+                                    
+                                    photosGrid.appendChild(photoItem);
+                                });
+                                
+                                footerMessage.textContent = `${data.quantidade} fotos encontradas para ${data.nome_pessoa}`;
+                            } else {
+                                // Mostrar mensagem de nenhuma foto encontrada
+                                noPhotos.style.display = 'block';
+                                footerMessage.textContent = `Nenhuma foto encontrada para ${nomePessoa}`;
+                            }
+                        } else {
+                            // Mostrar mensagem de erro
+                            errorMessage.style.display = 'block';
+                            footerMessage.textContent = data.message || `Erro ao buscar fotos de ${nomePessoa}`;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro ao buscar fotos:', error);
+                        loadingIndicator.style.display = 'none';
+                        errorMessage.style.display = 'block';
+                        footerMessage.textContent = 'Erro ao buscar fotos. Verifique o console para mais detalhes.';
+                    });
+            }
+            
+            // Event listeners
+            btnBuscar.addEventListener('click', buscarFotos);
+            
+            nomePessoaInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    buscarFotos();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

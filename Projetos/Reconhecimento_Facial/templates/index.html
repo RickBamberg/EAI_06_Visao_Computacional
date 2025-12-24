@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block nav %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+
+<div class="nav-container">
+    <ul class="nav-menu">
+        <li class="nav-item">
+            <button onclick="window.location.href='{{ url_for('capturar') }}'" class="nav-btn">Captura</button>
+        </li>
+        <li class="nav-item">
+            <button onclick="window.location.href='{{ url_for('preview') }}'" class="nav-btn">Preview</button>
+        </li>
+        <li class="nav-item">
+            <button onclick="window.location.href='{{ url_for('tratar') }}'" class="nav-btn">Tratamento</button>
+        </li>
+        <li class="nav-item">
+            <button onclick="window.location.href='{{ url_for('reconhecer') }}'" class="nav-btn">Reconhecimento</button>
+        </li>
+    </ul>
+</div>
+{% endblock %}
