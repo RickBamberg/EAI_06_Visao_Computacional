@@ -1,0 +1,5 @@
+train: ../datasets/face_dataset/images/train
+val: ../datasets/face_dataset/images/valid
+
+nc: 1
+names: ['rosto']
