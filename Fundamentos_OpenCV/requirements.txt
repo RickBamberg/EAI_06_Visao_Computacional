@@ -1,0 +1,29 @@
+# Core
+numpy>=1.21
+matplotlib>=3.5
+opencv-python>=4.5.5
+opencv-python-headless>=4.5.5  # se rodar em ambiente sem GUI
+
+# Jupyter
+notebook
+ipykernel
+
+# PyTorch (CPU ou CUDA - escolha abaixo)
+torch>=1.13.0
+torchvision>=0.14.0
+
+# YOLOv5 e utilitários
+pillow
+pandas
+seaborn
+scipy
+tqdm
+pyyaml
+requests
+
+# OCR
+pytesseract
+# (requer o binário do Tesseract instalado no sistema)
+
+# Para leitura de PDFs com imagens (opcional no OCR)
+pdf2image
