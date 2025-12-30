@@ -1,0 +1,25 @@
+{
+  "metadados": {
+    "data_processamento": "20251229_163442",
+    "configuracao_otimizada": "",
+    "pontuacao_ocr": 0,
+    "total_palavras": 0
+  },
+  "informacoes_extraidas": {
+    "datas": [],
+    "valores_monetarios": [],
+    "nomes_proprios": [],
+    "localidades": [],
+    "palavras_chave": {
+      "contrato": 0,
+      "cláusula": 0,
+      "serviço": 0,
+      "pagamento": 0,
+      "multa": 0,
+      "valor": 0,
+      "total": 0,
+      "pendente": 0,
+      "assinatura": 0
+    }
+  }
+}

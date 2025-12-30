@@ -1,0 +1,26 @@
+
+BASEADO NOS SEUS TESTES (data_do_teste), AS SEGUINTES CONFIGURAÇÕES FORAM VALIDADAS:
+
+✅ PROBLEMA IDENTIFICADO E RESOLVIDO:
+   - OpenCV FONT_HERSHEY não suporta caracteres portugueses (ç, ã, õ → ??)
+   - SOLUÇÃO: Usar PIL com fontes do sistema (ex: Arial, Times New Roman)
+
+✅ CONFIGURAÇÃO IDEAL PARA IMAGENS CRIADAS/OTIMIZADAS:
+   - Geração de Imagem: PIL.ImageFont com 'arial.ttf'
+   - Config Tesseract: '--psm 6' (bloco único de texto uniforme)
+   - Idioma: 'por'
+   - Pipeline de Pré-processamento: NÃO necessário para imagens limpas
+
+✅ CONFIGURAÇÃO PARA DOCUMENTOS REAIS/ESCANEADOS:
+   - Pipeline Obrigatório: 1) Remoção de ruído 2) CLAHE 3) Binarização (Otsu)
+   - Config Tesseract: '--psm 6' ou '--psm 3' (auto)
+   - Considerar: Correção de inclinação antes do OCR
+
+✅ TAXAS DE RECONHECIMENTO OBTIDAS NOS TESTES:
+   - Caracteres especiais em imagem PIL otimizada: 6/8 (75%)
+   - Eficácia do pipeline em imagem limpa: Reduziu para 5/8 (Não use para imagens perfeitas)
+
+PRÓXIMA ETAPA (Notebook 03): Aplicar estes conceitos em:
+1. PDFs e documentos escaneados reais
+2. Extração de campos específicos (tabelas, datas, valores)
+3. Validação pós-OCR com expressões regulares.

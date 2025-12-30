@@ -1,0 +1,29 @@
+{
+  "tipo_documento": "contrato",
+  "timestamp_processamento": "2025-12-29T18:33:21.921827",
+  "campos_extraidos": {
+    "datas": [
+      "2024-02-28"
+    ],
+    "nomes": [
+      "São João",
+      "João Gonçalves da Silva\n\nDate",
+      "Assinatura João",
+      "Gonçalves da Silva"
+    ]
+  },
+  "analise_especifica": {
+    "elementos_presentes": {
+      "partes_envolvidas": false,
+      "objeto": true,
+      "valor": false,
+      "prazo": false,
+      "assinatura": true,
+      "clausulas": true
+    },
+    "completude": 0.5,
+    "clausulas": {
+      "clausula_2º": "O pagamento ocorrerá na cidade de São João do O\n\nCráuguta 3º O não cumprimento acarrotecá em muita\n\nAssinatura João Gonçalves da Silva\n\nDate: 28/02/2024"
+    }
+  }
+}
