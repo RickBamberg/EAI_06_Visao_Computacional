@@ -1,0 +1,23 @@
+# OCR/requirements.txt
+# Dependências compatíveis com seu ambiente
+
+# Core
+numpy==1.26.4
+opencv-python-headless==4.9.0.80
+Pillow==10.3.0
+
+# OCR
+pytesseract==0.3.10
+
+# Image Processing
+scikit-image==0.22.0
+pdf2image==1.17.0
+
+# Visualization
+matplotlib==3.8.4
+
+# Data
+pandas==2.2.2
+
+# Optional (para comparação)
+easyocr==1.7.1
