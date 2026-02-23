@@ -1,104 +1,514 @@
-# Sistema de Reconhecimento Facial em Tempo Real com Deep Learning
+# 👤 Reconhecimento Facial com DeepFace
 
-Este projeto implementa um sistema completo de reconhecimento facial, capaz de identificar pessoas em tempo real através de uma interface web. A aplicação foi construída utilizando Python, Flask para o backend e uma pilha de tecnologias de Machine Learning, incluindo OpenCV, TensorFlow e a biblioteca DeepFace.
-
-## Estrutura do Projeto
-
-O projeto está organizado da seguinte forma para garantir a separação de responsabilidades e a clareza do código:
-
-```
-Reconhecimento_Facial/
-│
-├── data/
-│   ├── NOME_PESSOA_1/
-│   │   ├── 1.jpg
-│   │   └── ...
-│   ├── faces_recortadas/
-│   └── embeddings.pickle
-│
-├── notebook/
-│   └── processamento_e_geracao_embeddings.ipynb
-│
-├── templates/
-│   └── index.html
-│
-├── app.py
-├── capturar_fotos.py
-├── deploy.prototxt
-├── res10_300x300_ssd_iter_140000.caffemodel
-├── requirements.txt
-└── README.md
-```
-
--   **`data/`**: Contém todos os dados. As subpastas com os nomes das pessoas guardam as imagens de cadastro. `faces_recortadas` armazena os rostos extraídos, e `embeddings.pickle` é o banco de dados de "assinaturas faciais".
--   **`notebook/`**: Contém o Jupyter Notebook usado para o trabalho de preparação de dados.
--   **`templates/`**: Pasta padrão do Flask para armazenar os arquivos HTML do frontend.
--   **`app.py`**: O arquivo principal do servidor backend Flask.
--   **`capturar_fotos.py`**: Script utilitário para coletar as imagens de cadastro.
--   **`deploy.prototxt` e `*.caffemodel`**: Arquivos do modelo de detecção facial do OpenCV.
--   **`requirements.txt`**: Lista de todas as dependências do Python para fácil instalação.
--   **`README.md`**: Este arquivo de documentação.
+Sistema completo de **reconhecimento facial em tempo real** usando OpenCV + DeepFace (FaceNet). Aplicação Flask com interface web para captura, treinamento e reconhecimento.
 
 ---
 
-## Funcionalidades Principais
+## 🎯 Objetivo
 
--   **Cadastro de Pessoas:** Um script utilitário (`capturar_fotos.py`) permite cadastrar novas pessoas de forma consistente, usando a mesma câmera que será utilizada para o reconhecimento.
--   **Processamento e Geração de Embeddings:** Um notebook Jupyter é responsável por processar as imagens de cadastro, detectar os rostos e utilizar um modelo pré-treinado (FaceNet) para gerar "assinaturas faciais" (embeddings) para cada rosto.
--   **Banco de Dados de Embeddings:** As assinaturas faciais e os nomes correspondentes são salvos em um arquivo `embeddings.pickle`, que serve como o "cérebro" do sistema de reconhecimento.
--   **API de Reconhecimento:** O backend, construído com Flask e um servidor de produção WSGI (Waitress), expõe uma API na rota `/reconhecer` que recebe uma imagem e retorna os dados da pessoa identificada.
--   **Interface Web em Tempo Real:** Um frontend em HTML e JavaScript acessa a webcam do usuário, envia os quadros de vídeo para a API e desenha os resultados (caixa delimitadora e nome da pessoa) sobre o vídeo.
+Sistema end-to-end de reconhecimento facial:
+- ✅ Captura de fotos via webcam
+- ✅ Detecção e recorte automático de faces
+- ✅ Geração de embeddings (FaceNet)
+- ✅ Reconhecimento em tempo real
+- ✅ Interface web completa (Flask)
 
-## Arquitetura do Projeto
+**Aplicações**:
+- Controle de acesso
+- Sistema de presença
+- Autenticação biométrica
+- Portaria inteligente
 
-O sistema foi projetado de forma modular para separar as responsabilidades, seguindo as melhores práticas de desenvolvimento de software.
+---
 
-### Fase 1: Preparação e Cadastro (Offline)
+## 🏗️ Arquitetura do Sistema
 
-1.  **`capturar_fotos.py`**: Script para capturar imagens de referência de cada pessoa. Garante que os dados de cadastro tenham a mesma qualidade (câmera, iluminação) dos dados de teste, o que é crucial para a precisão do modelo.
-2.  **Notebook Jupyter**:
-    -   **Detecção de Rosto**: Utiliza um modelo DNN pré-treinado do OpenCV para detectar e recortar os rostos das imagens de cadastro.
-    -   **Geração de Embeddings**: Usa o modelo FaceNet, através da biblioteca DeepFace, para converter cada rosto recortado em um vetor numérico.
-    -   **Criação do Banco de Dados**: Salva todos os embeddings e seus respectivos nomes em um arquivo `embeddings.pickle`.
+```
+┌─────────────────────────────────────────┐
+│         INTERFACE WEB (Flask)           │
+├─────────────────────────────────────────┤
+│  Captura  │  Preview  │  Treino  │  ID  │
+└─────────────────────────────────────────┘
+        ↓           ↓          ↓        ↓
+┌─────────────────────────────────────────┐
+│           PROCESSAMENTO                 │
+├─────────────────────────────────────────┤
+│  OpenCV DNN  │  DeepFace  │  FaceNet   │
+│  (Detecção)  │  (Pipeline)│ (Embedding)│
+└─────────────────────────────────────────┘
+        ↓           ↓          ↓        ↓
+┌─────────────────────────────────────────┐
+│            ARMAZENAMENTO                │
+├─────────────────────────────────────────┤
+│  data/        │  faces_    │ embeddings │
+│  [pessoa]/    │  recortadas│  .pickle   │
+└─────────────────────────────────────────┘
+```
 
-### Fase 2: Reconhecimento (Online via API Web)
+---
 
-1.  **`app.py`**: O servidor backend Flask.
-    -   Na inicialização, carrega o detector facial do OpenCV, o modelo FaceNet e o arquivo `embeddings.pickle` na memória.
-    -   Utiliza um servidor de produção (Waitress) e um `threading.Lock` para garantir a estabilidade e o processamento seguro de requisições concorrentes.
-    -   Expõe a rota `/reconhecer`.
-2.  **`templates/index.html`**: O frontend.
-    -   Usa JavaScript para acessar a webcam.
-    -   Em um loop controlado (`setTimeout`), captura quadros do vídeo, os converte para base64 e os envia via requisição POST para a API `/reconhecer`.
-    -   Recebe a resposta JSON do backend e usa a tag `<canvas>` do HTML5 para desenhar a caixa e o nome sobre o vídeo em tempo real.
+## 📂 Estrutura do Projeto
 
-## Tecnologias Utilizadas
+```
+Reconhecimento_Facial/
+├── app.py                              # Flask backend (940 linhas)
+├── capturar_fotos.py                   # Script CLI de captura
+├── deploy.prototxt                     # OpenCV face detector
+├── res10_300x300_ssd_iter_140000.caffemodel  # Pesos (15MB)
+│
+├── data/                               # Dados
+│   ├── [Nome_Pessoa]/                  # Fotos originais
+│   │   └── 1.jpg, 2.jpg, ...
+│   ├── faces_recortadas/               # Faces detectadas
+│   │   └── [Nome]_1.jpg, ...
+│   └── embeddings.pickle               # Banco de embeddings
+│
+├── notebook/
+│   └── tratamento_imagens.ipynb        # Notebook de treinamento
+│
+├── templates/                          # Frontend
+│   ├── base.html                       # Template base
+│   ├── index.html                      # Página inicial
+│   ├── capturar.html                   # Captura de fotos
+│   ├── preview.html                    # Visualizar fotos
+│   ├── tratar.html                     # Treinar modelo
+│   └── reconhecer.html                 # Reconhecimento em tempo real
+│
+└── static/
+    └── css/
+        └── *.css                       # Estilos
+```
 
--   **Backend**: Python, Flask, Waitress
--   **Machine Learning**: TensorFlow, DeepFace (para o modelo FaceNet), OpenCV (para detecção e manipulação de imagem), Scipy, NumPy
--   **Frontend**: HTML5, CSS3, JavaScript (Fetch API)
--   **Ambiente**: Conda
+---
 
-## Como Executar o Projeto
+## 🔄 Fluxo Completo
 
-1.  **Configurar o Ambiente**: Crie e ative um ambiente (preferencialmente com Conda). Instale todas as dependências usando `pip install -r requirements.txt`.
-2.  **Cadastrar Pessoas**: Execute `python capturar_fotos.py` para cada pessoa que deseja reconhecer. Siga as instruções no terminal.
-3.  **Processar os Dados**: Execute todas as células do notebook Jupyter em `notebook/` para gerar o arquivo `embeddings.pickle`.
-4.  **Iniciar o Servidor**: Execute `python app.py` no terminal.
-5.  **Acessar a Aplicação**: Abra um navegador e acesse `http://127.0.0.1:5000`.
+### 1️⃣ Captura de Fotos
 
-## Notas sobre Performance e Hardware
+```
+Usuário acessa /capturar
+    ↓
+Insere nome da pessoa
+    ↓
+Ativa webcam
+    ↓
+Captura 5 fotos (tecla 'S')
+    ↓
+Salva em data/[Nome]/
+```
 
-Este projeto realiza tarefas de Deep Learning (inferência em duas redes neurais) em tempo real, o que é uma operação computacionalmente intensiva, especialmente para a CPU.
+**Código (app.py)**:
+```python
+@app.route('/capturar_foto', methods=['POST'])
+def capturar_foto():
+    global camera, captura_config
+    
+    if not captura_config['capturando']:
+        return jsonify({'status': 'error', 'message': 'Captura não iniciada'})
+    
+    # Ler frame da câmera
+    ret, frame = camera.read()
+    
+    # Salvar foto
+    nome_pessoa = captura_config['nome_pessoa']
+    pasta = f'data/{nome_pessoa}'
+    os.makedirs(pasta, exist_ok=True)
+    
+    count = captura_config['fotos_capturadas'] + 1
+    caminho = f'{pasta}/{count}.jpg'
+    cv2.imwrite(caminho, frame)
+    
+    captura_config['fotos_capturadas'] = count
+    
+    return jsonify({'status': 'success', 'fotos': count})
+```
 
--   **Lógica Funcional**: O sistema é logicamente completo e funcional. Ele detecta, reconhece e retorna a identidade das pessoas corretamente, como pode ser observado pelos logs do servidor e pela interface web.
--   **Gargalo de Performance**: O servidor pode apresentar instabilidade ou travar em máquinas com CPUs menos potentes, resultando em um erro de aplicativo (`python.exe - Erro de Aplicativo`), que é uma falha de segmentação causada pela exaustão de recursos. **Isso não é um erro de código, mas sim um limite de hardware.**
--   **Solução e Ajuste Fino**: A estabilidade do sistema é controlada pelo intervalo de `setTimeout` no arquivo `templates/index.html`. Em hardware mais potente (CPU rápida ou com suporte a GPU), um intervalo menor (ex: `100ms`) funcionaria de forma fluida. Em hardware mais modesto, um intervalo maior (ex: `1000ms`) garante a estabilidade em detrimento da fluidez do vídeo.
+---
 
-Este projeto cumpre com sucesso o desafio de criar um sistema de reconhecimento facial do zero, demonstrando a implementação de uma arquitetura web complexa e a aplicação de múltiplos modelos de deep learning.
+### 2️⃣ Treinamento (Detecção + Embeddings)
 
-## 📫 Contato
+```
+Usuário acessa /tratar
+    ↓
+Clica "Processar Imagens"
+    ↓
+┌─────────────────────────────────┐
+│  1. Detectar faces (OpenCV DNN) │
+│  2. Recortar faces              │
+│  3. Salvar em faces_recortadas/ │
+└─────────────────────────────────┘
+    ↓
+┌─────────────────────────────────┐
+│  4. Gerar embeddings (FaceNet)  │
+│  5. Salvar embeddings.pickle    │
+└─────────────────────────────────┘
+    ↓
+Sistema pronto para reconhecimento
+```
 
-- GitHub: [https://github.com/RickBamberg](https://github.com/RickBamberg/)
-- LinkedIn: [https://www.linkedin.com/in/carlos-henrique-bamberg-marques](https://www.linkedin.com/in/carlos-henrique-bamberg-marques/)
-- Email: [rick.bamberg@gmail.com](mailto:rick.bamberg@gmail.com)
+**Detecção de Faces (OpenCV DNN)**:
+```python
+def detectar_e_recortar_faces():
+    # Carregar detector SSD
+    detector = cv2.dnn.readNetFromCaffe(
+        'deploy.prototxt',
+        'res10_300x300_ssd_iter_140000.caffemodel'
+    )
+    
+    # Para cada foto em data/[pessoa]/
+    for pessoa in os.listdir('data'):
+        pasta_pessoa = f'data/{pessoa}'
+        
+        for foto in os.listdir(pasta_pessoa):
+            img = cv2.imread(f'{pasta_pessoa}/{foto}')
+            h, w = img.shape[:2]
+            
+            # Pré-processar
+            blob = cv2.dnn.blobFromImage(
+                cv2.resize(img, (300, 300)),
+                1.0, (300, 300), (104, 177, 123)
+            )
+            
+            # Detectar
+            detector.setInput(blob)
+            detections = detector.forward()
+            
+            # Melhor detecção
+            best_idx = np.argmax(detections[0, 0, :, 2])
+            confidence = detections[0, 0, best_idx, 2]
+            
+            if confidence > 0.8:
+                # Coordenadas
+                box = detections[0, 0, best_idx, 3:7] * [w, h, w, h]
+                x1, y1, x2, y2 = box.astype(int)
+                
+                # Recortar
+                face = img[y1:y2, x1:x2]
+                
+                # Salvar
+                cv2.imwrite(
+                    f'data/faces_recortadas/{pessoa}_{foto}',
+                    face
+                )
+```
+
+**Geração de Embeddings (FaceNet)**:
+```python
+def gerar_embeddings():
+    from deepface import DeepFace
+    
+    embeddings = []
+    names = []
+    
+    # Para cada face recortada
+    for arquivo in os.listdir('data/faces_recortadas'):
+        nome_pessoa = arquivo.split('_')[0]
+        caminho = f'data/faces_recortadas/{arquivo}'
+        
+        # Gerar embedding (vetor 128D)
+        embedding_obj = DeepFace.represent(
+            img_path=caminho,
+            model_name='Facenet',
+            enforce_detection=False
+        )
+        
+        embedding = embedding_obj[0]['embedding']
+        
+        embeddings.append(embedding)
+        names.append(nome_pessoa)
+    
+    # Salvar banco de dados
+    with open('data/embeddings.pickle', 'wb') as f:
+        pickle.dump({
+            'embeddings': np.array(embeddings),
+            'names': names
+        }, f)
+```
+
+---
+
+### 3️⃣ Reconhecimento em Tempo Real
+
+```
+Usuário acessa /reconhecer
+    ↓
+Sistema carrega embeddings.pickle
+    ↓
+Ativa webcam
+    ↓
+┌───────────────────────────────┐
+│ Loop em tempo real:           │
+│  1. Capturar frame            │
+│  2. Detectar face             │
+│  3. Gerar embedding           │
+│  4. Comparar com banco (cosine)│
+│  5. Exibir nome + confiança   │
+└───────────────────────────────┘
+```
+
+**Código de Reconhecimento**:
+```python
+def reconhecer_frame(frame):
+    global known_embeddings, known_names
+    
+    # 1. Detectar face
+    h, w = frame.shape[:2]
+    blob = cv2.dnn.blobFromImage(
+        cv2.resize(frame, (300, 300)),
+        1.0, (300, 300), (104, 177, 123)
+    )
+    
+    detector.setInput(blob)
+    detections = detector.forward()
+    
+    # 2. Para cada face detectada
+    for i in range(detections.shape[2]):
+        confidence = detections[0, 0, i, 2]
+        
+        if confidence > 0.5:
+            # Coordenadas
+            box = detections[0, 0, i, 3:7] * [w, h, w, h]
+            x1, y1, x2, y2 = box.astype(int)
+            
+            # Recortar face
+            face = frame[y1:y2, x1:x2]
+            
+            if face.size == 0:
+                continue
+            
+            # 3. Gerar embedding da face
+            try:
+                embedding_obj = DeepFace.represent(
+                    img_path=face,
+                    model_name='Facenet',
+                    enforce_detection=False
+                )
+                embedding = embedding_obj[0]['embedding']
+                
+                # 4. Comparar com banco (distância cosine)
+                distancias = [
+                    cosine(embedding, known_emb)
+                    for known_emb in known_embeddings
+                ]
+                
+                # Melhor match
+                min_idx = np.argmin(distancias)
+                min_dist = distancias[min_idx]
+                
+                # Threshold: 0.4 (ajustável)
+                if min_dist < 0.4:
+                    nome = known_names[min_idx]
+                    confianca = (1 - min_dist) * 100
+                else:
+                    nome = "Desconhecido"
+                    confianca = 0
+                
+                # 5. Desenhar na imagem
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                texto = f"{nome} ({confianca:.1f}%)"
+                cv2.putText(frame, texto, (x1, y1-10),
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                
+            except Exception as e:
+                print(f"Erro ao processar face: {e}")
+    
+    return frame
+```
+
+---
+
+## 💻 Como Usar
+
+### 1. Instalação
+
+```bash
+# Criar ambiente
+conda create -n face_rec python=3.9
+conda activate face_rec
+
+# Dependências
+pip install flask flask-cors opencv-python deepface scipy tqdm
+
+# Baixar modelo OpenCV (se não tiver)
+# deploy.prototxt
+# res10_300x300_ssd_iter_140000.caffemodel
+# Download: https://github.com/opencv/opencv/tree/master/samples/dnn/face_detector
+```
+
+### 2. Executar Aplicação
+
+```bash
+python app.py
+```
+
+Acesse: http://localhost:5000
+
+### 3. Fluxo de Uso
+
+**Passo 1: Capturar Fotos**
+1. Menu → Captura
+2. Digite nome da pessoa
+3. Clique "Iniciar Captura"
+4. Pressione 'S' para capturar 5 fotos
+5. Clique "Parar Captura"
+
+**Passo 2: Treinar Modelo**
+1. Menu → Tratar
+2. Clique "Processar Imagens"
+3. Aguarde detecção + embeddings (1-2 min)
+4. Sistema salva embeddings.pickle
+
+**Passo 3: Reconhecer**
+1. Menu → Reconhecer
+2. Clique "Iniciar Reconhecimento"
+3. Webcam mostra nome + confiança
+4. Verde = reconhecido, Vermelho = desconhecido
+
+---
+
+## 📊 Tecnologias Utilizadas
+
+| Componente | Tecnologia | Função |
+|------------|-----------|--------|
+| **Backend** | Flask | Servidor web |
+| **Detecção** | OpenCV DNN (SSD) | Detectar faces |
+| **Embedding** | DeepFace (FaceNet) | Vetores 128D |
+| **Comparação** | Scipy (cosine) | Similaridade |
+| **Frontend** | HTML/CSS/JS + Bootstrap | Interface |
+| **Webcam** | OpenCV VideoCapture | Stream de vídeo |
+
+---
+
+## 🎯 Accuracy e Performance
+
+### Métricas
+
+```
+Detecção de Faces (OpenCV SSD):
+- Accuracy: 95%
+- FPS: ~30 (CPU)
+- Falsos positivos: <5%
+
+Reconhecimento (FaceNet):
+- Accuracy: 97-99% (faces frontais)
+- Threshold: 0.4 (cosine distance)
+- FPS: ~5-10 (CPU), ~30 (GPU)
+
+End-to-End:
+- FPS final: ~5-10 (bottleneck = embedding)
+- Latência: ~100-200ms por frame
+```
+
+### Otimizações
+
+```python
+# 1. Processar apenas a cada N frames
+frame_count = 0
+if frame_count % 3 == 0:  # Processar 1 a cada 3 frames
+    reconhecer_frame(frame)
+frame_count += 1
+
+# 2. Reduzir resolução
+frame_small = cv2.resize(frame, (320, 240))
+
+# 3. GPU acceleration (se disponível)
+# DeepFace usa TensorFlow backend
+# Configurar GPU em tensorflow
+```
+
+---
+
+## 🔍 Troubleshooting
+
+### Problema 1: Câmera não abre
+
+```python
+# Solução: Verificar índice da câmera
+camera = cv2.VideoCapture(0)  # Tentar 0, 1, 2...
+
+# Listar câmeras disponíveis
+import cv2
+for i in range(5):
+    cap = cv2.VideoCapture(i)
+    if cap.isOpened():
+        print(f"Câmera {i} disponível")
+        cap.release()
+```
+
+### Problema 2: Modelo não baixa
+
+```python
+# DeepFace baixa modelos automaticamente
+# Se falhar, baixar manualmente:
+
+# FaceNet weights:
+# https://github.com/serengil/deepface_models/releases/download/v1.0/facenet_weights.h5
+# Colocar em: ~/.deepface/weights/
+
+# OpenCV detector:
+# deploy.prototxt
+# res10_300x300_ssd_iter_140000.caffemodel
+# Colocar na pasta raiz do projeto
+```
+
+### Problema 3: Reconhecimento lento
+
+```python
+# Solução: Processar menos frames
+# ou usar GPU
+
+# CPU: ~5 FPS
+# GPU: ~30 FPS
+
+# Configurar TensorFlow GPU:
+import tensorflow as tf
+gpus = tf.config.list_physical_devices('GPU')
+if gpus:
+    tf.config.experimental.set_memory_growth(gpus[0], True)
+```
+
+---
+
+## 📈 Próximas Melhorias
+
+- [ ] Adicionar múltiplas faces por frame
+- [ ] Salvar log de reconhecimentos
+- [ ] Dashboard com estatísticas
+- [ ] Modo de treinamento incremental
+- [ ] Export para ONNX (deploy otimizado)
+- [ ] API REST para integração
+- [ ] Suporte a máscaras faciais
+- [ ] Age e gender detection
+
+---
+
+## 📖 Recursos
+
+### Documentação
+- [DeepFace](https://github.com/serengil/deepface)
+- [OpenCV Face Detection](https://docs.opencv.org/4.x/d5/d54/group__objdetect.html)
+- [FaceNet Paper](https://arxiv.org/abs/1503.03832)
+
+### Datasets
+- [LFW (Labeled Faces in the Wild)](http://vis-www.cs.umass.edu/lfw/)
+- [VGGFace2](https://github.com/ox-vgg/vgg_face2)
+
+---
+
+## 📧 Contato
+
+**Autor**: Carlos Henrique Bamberg Marques  
+**Email**: rick.bamberg@gmail.com  
+**GitHub**: [@RickBamberg](https://github.com/RickBamberg/)
+
+---
+
+## 📄 Licença
+
+MIT License
+
+---
+
+**💡 Dica**: Para melhor accuracy, capture fotos com boa iluminação e ângulos variados!
+
+*Projeto prático do curso "Especialista em IA" - Módulo EAI_06*

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎨 Detector de Objetos Coloridos - IA Specialist</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎨 Detector de Objetos Coloridos</h1>
+            <p>Sistema de Visão Computacional com IA</p>
+        </header>
+
+        <div class="main-content">
+            <div class="video-section">
+                <h2 style="margin-bottom: 15px; color: #667eea;">
+                    <span class="status-indicator"></span>
+                    Câmera ao Vivo
+                </h2>
+                <div class="video-container">
+                    <img src="{{ url_for('video_feed') }}" alt="Video Feed">
+                </div>
+            </div>
+
+            <div class="controls-section">
+                <div class="control-group">
+                    <h3>🎯 Selecione a Cor</h3>
+                    <div class="color-buttons">
+                        {% for color in colors %}
+                        <button class="color-btn {{ color }}" 
+                                onclick="setColor('{{ color }}')" 
+                                id="btn-{{ color }}">
+                            {{ color.upper() }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>📏 Área Mínima</h3>
+                    <div class="slider-container">
+                        <label>
+                            Filtro de tamanho
+                            <span class="slider-value" id="area-value">500</span>
+                        </label>
+                        <input type="range" 
+                               id="min-area" 
+                               min="100" 
+                               max="5000" 
+                               value="500" 
+                               step="50"
+                               oninput="updateAreaValue(this.value)">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>⚙️ Visualização</h3>
+                    <div class="toggle-container">
+                        <label>Mostrar Máscara HSV</label>
+                        <label class="switch">
+                            <input type="checkbox" id="toggle-mask" onchange="toggleMask()">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <h2>📊 Informações do Sistema</h2>
+            <div class="info-grid">
+                <div class="info-card">
+                    <h4>Cor Detectando</h4>
+                    <p id="current-color">VERMELHO</p>
+                </div>
+                <div class="info-card">
+                    <h4>Área Mínima</h4>
+                    <p id="current-area">500 px</p>
+                </div>
+            </div>
+
+            <h3 style="color: #667eea; margin: 20px 0 15px;">🚀 Aplicações Práticas</h3>
+            <ul class="features-list">
+                <li><strong>Reciclagem:</strong> Separação automática de materiais por cor</li>
+                <li><strong>Esportes:</strong> Rastreamento de bolas e objetos em tempo real</li>
+                <li><strong>Controle de Qualidade:</strong> Identificação de peças defeituosas</li>
+                <li><strong>Automação Industrial:</strong> Classificação de produtos na linha de produção</li>
+                <li><strong>Robótica:</strong> Navegação e identificação de objetos</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Inicialização
+        let currentColor = 'vermelho';
+        
+        window.onload = function() {
+            document.getElementById('btn-vermelho').classList.add('active');
+            updateStatus();
+        };
+
+        // Função para definir cor
+        function setColor(color) {
+            fetch('/set_color', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ color: color })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    currentColor = color;
+                    // Atualiza botões ativos
+                    document.querySelectorAll('.color-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    document.getElementById('btn-' + color).classList.add('active');
+                    updateStatus();
+                }
+            })
+            .catch(error => console.error('Erro:', error));
+        }
+
+        // Função para atualizar valor da área
+        function updateAreaValue(value) {
+            document.getElementById('area-value').textContent = value;
+            
+            fetch('/set_min_area', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ area: value })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateStatus();
+                }
+            })
+            .catch(error => console.error('Erro:', error));
+        }
+
+        // Função para alternar máscara
+        function toggleMask() {
+            fetch('/toggle_mask', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Máscara:', data.show_mask);
+            })
+            .catch(error => console.error('Erro:', error));
+        }
+
+        // Atualiza status do sistema
+        function updateStatus() {
+            fetch('/get_status')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('current-color').textContent = data.current_color.toUpperCase();
+                document.getElementById('current-area').textContent = data.min_area + ' px';
+            })
+            .catch(error => console.error('Erro:', error));
+        }
+
+        // Atualiza status a cada 5 segundos
+        setInterval(updateStatus, 5000);
+    </script>
+</body>
+</html>
